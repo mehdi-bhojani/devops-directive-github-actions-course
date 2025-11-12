@@ -1,0 +1,47 @@
+name: Update README with PRs
+
+on:
+  push:
+    branches:
+      - main
+      # - dev
+  workflow_dispatch:
+
+jobs:
+  append-pr-to-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get last merged PR into main
+        id: last_pr
+        uses: octokit/request-action@v2
+        with:
+          route: GET /repos/${{ github.repository }}/pulls?state=closed&base=dev&sort=updated&direction=desc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set PR title
+        id: pr_title
+        run: |
+          LAST_PR=$(echo '${{ steps.last_pr.outputs.data }}' | jq -r '.[0].title')
+          if [ -z "$LAST_PR" ] || [ "$LAST_PR" = "null" ]; then
+            echo "PR_TITLE=Ready for deployment" >> $GITHUB_ENV
+          else
+            echo "PR_TITLE=$LAST_PR" >> $GITHUB_ENV
+
+      - name: Append to README.md
+        run: |
+          echo "- $PR_TITLE" >> README.md
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Update README with last PR: $PR_TITLE" || echo "No changes to commit"
+          git push origin dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
