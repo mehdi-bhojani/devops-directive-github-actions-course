@@ -17,7 +17,7 @@ jobs:
 
       - name: Get last merged PR into main
         id: last_pr
-        uses: octokit/request-action@v2
+        uses: octokit/request-action@v2.x
         with:
           route: GET /repos/${{ github.repository }}/pulls?state=closed&base=dev&sort=updated&direction=desc
         env:
@@ -31,6 +31,7 @@ jobs:
             echo "PR_TITLE=Ready for deployment" >> $GITHUB_ENV
           else
             echo "PR_TITLE=$LAST_PR" >> $GITHUB_ENV
+          fi
 
       - name: Append to README.md
         run: |
